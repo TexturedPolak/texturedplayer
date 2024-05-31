@@ -1,15 +1,25 @@
 # For files
 import json
 import os
+# For one message ;)
+from subprocess import Popen
 # For metadata
-from tinytag import TinyTag
+try:
+    from tinytag import TinyTag
+    tinytag_enabled=True
+except ModuleNotFoundError:
+    tinytag_enabled=False
+    if os.name == "posix":
+        proc = Popen('echo "Tinytag library is needed, if you want display metadata like title.\nInstall it using ~ pip install tinytag ~"', shell=True)
+    else:
+        proc = Popen('echo Tinytag library is needed, if you want display metadata like title.\nInstall it using ~ pip install tinytag ~', shell=True)
 # For Random Playlist
 import random
 # Get music directory from config.json
 try:
     music_directory = json.loads(open("config.json","r").read()).get("music-directory")
 except FileNotFoundError:
-    print("No config.json file found!")
+    print("No config.json file found! Download sample_config.json and rename it to config.json!")
     exit()
 if music_directory is not None:
     try:
@@ -57,12 +67,14 @@ def create_playlist():
 
 # Get song metadata. If not have metadata, just return filename.
 def get_metadata(song_file: str):
-    song_data = TinyTag.get(song_file)
-    if song_data.artist is None:
-        toreturn=song_file
+    if tinytag_enabled is True:
+        song_data = TinyTag.get(song_file)
+        if song_data.artist is None:
+            return(song_file)
+        else:
+            return str(song_data.title) + " - " + str(song_data.artist)
     else:
-        toreturn=str(song_data.title) + " - " + str(song_data.artist)
-    return toreturn
+        return(song_file)
 
 # Get old playlist from playlist.json.
 def get_newplaylist():
