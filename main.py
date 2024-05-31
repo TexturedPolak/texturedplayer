@@ -53,7 +53,7 @@ class TexturMusic(App):
     # TUI
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
-        yield Static("Ładowanie...", classes="box", id="song")
+        yield Static("Loading...", classes="box", id="song")
         with Horizontal():
             yield Button("Previous", classes="buttons", id="previous")
             yield Button("Next", classes="buttons", id="next")
