@@ -17,5 +17,8 @@
 > [!WARNING]  
 > `ffplay` can also play videos. This program however will just play sound from videos. **Put into music directory only music for the best expierence.**
 
+> [!WARNING]  
+> **Any none video or sound file in music directory can slow down program** except `playlist.json`.
+
 > [!NOTE]  
 > `playlist.json` will be created in music directory. That file store information about playlist. It will be ignored by `ffplay`.
