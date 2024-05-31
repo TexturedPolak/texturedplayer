@@ -1,27 +1,35 @@
 # For files
 import json
 import os
-# For sleep
-import time
-# For play music
-import subprocess
-# For tags
+# For metadata
 from tinytag import TinyTag
 # For Random Playlist
 import random
-# Directory with music :)
-music_directory = "/home/rafal/Pulpit/muzyka good/"
-os.chdir(music_directory)
+# Get music directory from config.json
+try:
+    music_directory = json.loads(open("config.json","r").read()).get("music-directory")
+except FileNotFoundError:
+    print("No config.json file found!")
+    exit()
+if music_directory is not None:
+    try:
+        os.chdir(music_directory)
+    except FileNotFoundError:
+        print("Wrong music directory!")
+        exit()
+else:
+    print("Broken config.json file.")
+    exit()
 
-# Functions
+# Functions :)
 
-
+# Saves playlist to playlist.json file.
 def save_playlist(playlist):
     file = open("playlist.json", "w")
     file.write(json.dumps(playlist))
     file.close()
 
-
+# Randomize playlist.
 def get_random_playlist(newplaylist):
     playlist = newplaylist["playlist"]
     to_random = []
@@ -38,9 +46,8 @@ def get_random_playlist(newplaylist):
     random_newplaylist = {"playlist":random_playlist,"next":newplaylist["next"]}
     return random_newplaylist
 
-
+# Create new playlist.
 def create_playlist():
-
     playlist = []
     for file in os.listdir():
         if file != "playlist.json":
@@ -48,6 +55,7 @@ def create_playlist():
     newplaylist = {"playlist":playlist,"next":0}
     return newplaylist
 
+# Get song metadata. If not have metadata, just return filename.
 def get_metadata(song_file: str):
     song_data = TinyTag.get(song_file)
     if song_data.artist is None:
@@ -55,15 +63,8 @@ def get_metadata(song_file: str):
     else:
         toreturn=str(song_data.title) + " - " + str(song_data.artist)
     return toreturn
-    
-def play_song(song_file: str):
-    #song_data = TinyTag.get(song_file)
-    #print(f"Playing {song_data.title} by {song_data.artist}")
-    #subprocess.call(["ffplay", "-nodisp", "-autoexit", "-hide_banner", '-af', "volume=1", '-loglevel', 'quiet', song_file])
-    os.system(f"ffplay -nodisp -autoexit -hide_banner -af -volume-0.1 -loglevel quiet {song_file}")
-    #time.sleep(1)
 
-
+# Get old playlist from playlist.json.
 def get_newplaylist():
     if os.path.exists("playlist.json"):
         newplaylist = json.loads(open("playlist.json","r").read())
@@ -73,19 +74,4 @@ def get_newplaylist():
     else:
         newplaylist = get_random_playlist(create_playlist())
         save_playlist(newplaylist)
-    
     return newplaylist
-
-    #while True:
-        #for song in playlist:
-
-            #playlist.remove(song)
-            #save_playlist(playlist)
-            #play_song(song)
-
-        #playlist = get_random_playlist(create_playlist())
-        #save_playlist(playlist)
-
-
-# Main loop
-#play_playlist()
