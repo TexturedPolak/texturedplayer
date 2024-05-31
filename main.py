@@ -1,24 +1,23 @@
-import asyncio
-import time
 import utils
 from textual.app import App, ComposeResult
-from textual.containers import ScrollableContainer
-from textual.widgets import Button, Footer, Header, Static
-from textual.containers import Horizontal, Vertical
-from textual.reactive import reactive
+from textual.widgets import Button, Static
+from textual.containers import Horizontal
 from textual import on
 import subprocess
 import os
 import signal
-#import threading
 
+# Init playlist and second process for playing music :)
 newplaylist = utils.get_newplaylist()
 if os.name == "posix":
     proc = subprocess.Popen('echo "TexturedPlayer for Linux/MacOS"', shell=True, preexec_fn=os.setsid)
 else:
     proc = subprocess.Popen('echo TexturedPlayer for Windows', shell=True)
+
+
+#Main Class
 class TexturMusic(App):
-    # style
+    # Style
     CSS = """
     Screen {
         layout: vertical;
@@ -42,17 +41,14 @@ class TexturMusic(App):
     }
     """
 
-
     # TUI
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
-        #yield Header()
         yield Static("Ładowanie...", classes="box", id="song")
         with Horizontal():
             yield Button("Poprzedni", classes="buttons", id="previous")
             yield Button("Następny", classes="buttons", id="next")
-        # yield Footer()
-
+        
     def change_text(self, change):
         song = self.query_one("#song")
         song.label = change
@@ -94,7 +90,7 @@ class TexturMusic(App):
     def next_song(self):
         self.play_next_song()
         
-    #Previous button
+    # Previous button
     @on(Button.Pressed, "#previous")
     def previous_song(self):
         global newplaylist
@@ -115,7 +111,7 @@ class TexturMusic(App):
     def on_mount(self) -> None:
         self.update_timer = self.set_interval(1, self.main_loop, pause=False)
     
-# Running and exiting
+# Running and exiting ;)
 if __name__ == "__main__":
     app = TexturMusic()
     app.run()
