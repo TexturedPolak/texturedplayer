@@ -1,9 +1,18 @@
+# Creating Playlists
 import utils
-from textual.app import App, ComposeResult
-from textual.widgets import Button, Static
-from textual.containers import Horizontal
-from textual import on
+# TUI
+try:
+    from textual.app import App, ComposeResult
+    from textual.widgets import Button, Static
+    from textual.containers import Horizontal
+    from textual import on
+except ModuleNotFoundError:
+    print("Textual is now still needed to run this app.")
+    print("Install it with 'pip install textual'.")
+    exit()
+# Run in background
 import subprocess
+# Many things with os
 import os
 import signal
 
@@ -46,8 +55,8 @@ class TexturMusic(App):
         """Create child widgets for the app."""
         yield Static("Ładowanie...", classes="box", id="song")
         with Horizontal():
-            yield Button("Poprzedni", classes="buttons", id="previous")
-            yield Button("Następny", classes="buttons", id="next")
+            yield Button("Previous", classes="buttons", id="previous")
+            yield Button("Next", classes="buttons", id="next")
         
     def change_text(self, change):
         song = self.query_one("#song")
