@@ -91,6 +91,7 @@ class TexturMusic(App):
         yield Static("Loading...", classes="box", id="song")
         with Horizontal():
             yield Button("Previous", classes="buttons", id="previous")
+            yield Button("Next", classes="buttons", id="pause")
             yield Button("Next", classes="buttons", id="next")
         
     def change_text(self, change):
@@ -107,30 +108,31 @@ class TexturMusic(App):
         # Global discordRPC current song
         if discordRPC_enabled:
             global current_song
+        # Kill if music process is alive
         poll = proc.poll()
-        if poll is not None:
-            if newplaylist["next"] < len(newplaylist["playlist"]):
-                if os.name == "posix":
-                    proc = subprocess.Popen(f'ffplay -nodisp -autoexit -af "volume=0.4" "{newplaylist["playlist"][newplaylist["next"]]}"',stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT, 
-                        shell=True, preexec_fn=os.setsid)
-                else:
-                    proc = subprocess.Popen(f'ffplay -nodisp -autoexit -af "volume=0.4" "{newplaylist["playlist"][newplaylist["next"]]}"',stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT, 
-                       shell=True)
-                self.change_text(str(utils.get_metadata(newplaylist["playlist"][newplaylist["next"]])))
-                # Change song in discord RPC (may display after 15 seconds)
-                if discordRPC_enabled:
-                    current_song.value = str(utils.get_metadata(newplaylist["playlist"][newplaylist["next"]]))
-                newplaylist["next"] += 1
-                utils.save_playlist(newplaylist)
-            else:
-                newplaylist = utils.get_random_playlist(utils.create_playlist())
-                self.play_next_song()
-        else:
+        if poll is None:
             if os.name == "posix":
                 os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
             else:
                 subprocess.call(['taskkill', '/F', '/T', '/PID', str(proc.pid)],stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT, 
                        shell=True)
+        # Play next song if exist
+        if newplaylist["next"] < len(newplaylist["playlist"]):
+            if os.name == "posix":
+                proc = subprocess.Popen(f'ffplay -nodisp -autoexit -af "volume=0.4" "{newplaylist["playlist"][newplaylist["next"]]}"',stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT, 
+                    shell=True, preexec_fn=os.setsid)
+            else:
+                proc = subprocess.Popen(f'ffplay -nodisp -autoexit -af "volume=0.4" "{newplaylist["playlist"][newplaylist["next"]]}"',stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT, 
+                    shell=True)
+            self.change_text(str(utils.get_metadata(newplaylist["playlist"][newplaylist["next"]])))
+            # Change song in discord RPC (may display after 15 seconds)
+            if discordRPC_enabled:
+                current_song.value = str(utils.get_metadata(newplaylist["playlist"][newplaylist["next"]]))
+            newplaylist["next"] += 1
+            utils.save_playlist(newplaylist)
+        # Create new playlist, if next song don't exist
+        else:
+            newplaylist = utils.get_random_playlist(utils.create_playlist())
             self.play_next_song()
 
     # Next button
