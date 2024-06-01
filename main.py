@@ -138,12 +138,16 @@ class TexturMusic(App):
     # Next button
     @on(Button.Pressed, "#next")
     def next_song(self):
+        global paused
+        paused = False
         self.play_next_song()
         
     # Previous button
     @on(Button.Pressed, "#previous")
     def previous_song(self):
         global newplaylist
+        global paused
+        paused = False
         newplaylist["next"] -= 2
         if newplaylist["next"] < 0:
             newplaylist["next"] = 0
