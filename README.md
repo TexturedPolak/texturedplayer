@@ -6,7 +6,7 @@
 ![](https://img.shields.io/github/stars/TexturedPolak/texturedplayer?style=for-the-badge
 )
 ![](https://img.shields.io/github/languages/top/TexturedPolak/texturedplayer?style=for-the-badge)
-![](https://i.imgur.com/Ub561YH.png)
+![](https://i.imgur.com/jZflVR8.png)
 ## Requirements:
 - **ffplay** installed (it comes with **ffmpeg**). Search on google, how to install **ffmpeg** that on your OS.
 - **[Textual](https://github.com/textualize/textual/)** library. You can install it using `pip install textual`.
@@ -14,6 +14,8 @@
 - **[Tinytag](https://github.com/devsnd/tinytag)** library for metadata (like title, author etc.) support. You can install it using `pip install tinytag`.
 - **[Pypresence](https://github.com/qwertyquerty/pypresence)** library for discord rich presence (in-game status). You can install it using `pip install pypresence`.<br>
 [![pypresence](https://img.shields.io/badge/using-pypresence-00bb88.svg?style=for-the-badge&logo=discord&logoWidth=20)](https://github.com/qwertyquerty/pypresence)
+> [!NOTE]  
+> Songs in discord rich presence may change with a delay (about 15 seconds).
 ## Functions
 - Create randomized playlist from files in chosen (in config.json) directory.
 - Play any formats supported by ffplay.
