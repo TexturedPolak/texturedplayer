@@ -31,7 +31,7 @@ if os.name == "posix":
 else:
     proc = subprocess.Popen('echo TexturedPlayer for Windows', shell=True)
 
-# Enable discordRPC loop
+# Define discordRPC loop
 if discordRPC_enabled:
     def init_discordRPC(state,details):
         discordRPC = Presence('1246101303084585071') #Change if you want custom RPC ;)
@@ -51,14 +51,6 @@ if discordRPC_enabled:
             else:
                 connected = connect()
             time.sleep(15)
-        
-    manager = multiprocessing.Manager()
-    current_song = manager.Value('Idle', "Idle")
-    current_state = manager.Value("Idle2", "Playing")
-    discordRPC_loop=multiprocessing.Process(target=init_discordRPC, args=(current_song, current_state))
-    discordRPC_loop.start()
-   
-    
 
 # Is paused?
 paused = False
@@ -193,6 +185,13 @@ class TexturMusic(App):
     
 # Running and exiting ;)
 if __name__ == "__main__":
+    # Start discord RPC loop
+    if discordRPC_enabled:
+        manager = multiprocessing.Manager()
+        current_song = manager.Value('Idle', "Idle")
+        current_state = manager.Value("Idle2", "Playing")
+        discordRPC_loop=multiprocessing.Process(target=init_discordRPC, args=(current_song, current_state))
+        discordRPC_loop.start()
     app = TexturMusic()
     app.run()
     if discordRPC_enabled:
