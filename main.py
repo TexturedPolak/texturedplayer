@@ -139,6 +139,12 @@ class TexturMusic(App):
     @on(Button.Pressed, "#next")
     def next_song(self):
         global paused
+        global newplaylist
+        if discordRPC_enabled:
+            global current_state
+            current_state.value = "Playing"
+        if paused:
+            newplaylist["next"] += 1
         paused = False
         self.play_next_song()
         
@@ -147,10 +153,16 @@ class TexturMusic(App):
     def previous_song(self):
         global newplaylist
         global paused
-        paused = False
-        newplaylist["next"] -= 2
+        if discordRPC_enabled:
+            global current_state
+            current_state.value = "Playing"
+        if paused:
+            newplaylist["next"] -= 1
+        else:
+            newplaylist["next"] -= 2
         if newplaylist["next"] < 0:
             newplaylist["next"] = 0
+        paused = False
         self.play_next_song()
     
     # Pause button
@@ -192,7 +204,7 @@ if __name__ == "__main__":
     # Start discord RPC loop
     if discordRPC_enabled:
         manager = multiprocessing.Manager()
-        current_song = manager.Value('Idle', "Idle")
+        current_song = manager.Value('Idle', "Loading...")
         current_state = manager.Value("Idle2", "Playing")
         discordRPC_loop=multiprocessing.Process(target=init_discordRPC, args=(current_song, current_state))
         discordRPC_loop.start()
