@@ -12,7 +12,7 @@
 - **[Textual](https://github.com/textualize/textual/)** library. You can install it using `pip install textual`.
 ## Optional
 - **[Tinytag](https://github.com/devsnd/tinytag)** library for metadata (like title, author etc.) support. You can install it using `pip install tinytag`.
-- **[Pypresence](https://github.com/qwertyquerty/pypresence)** library for discord rich presence (in-game status). You can install it using `pip install pypresence`
+- **[Pypresence](https://github.com/qwertyquerty/pypresence)** library for discord rich presence (in-game status). You can install it using `pip install pypresence`.<br>
 [![pypresence](https://img.shields.io/badge/using-pypresence-00bb88.svg?style=for-the-badge&logo=discord&logoWidth=20)](https://github.com/qwertyquerty/pypresence)
 ## Functions
 - Create randomized playlist from files in chosen (in config.json) directory.
