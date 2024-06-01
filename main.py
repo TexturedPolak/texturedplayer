@@ -109,7 +109,7 @@ class TexturMusic(App):
             global current_song
         poll = proc.poll()
         if poll is not None:
-            if newplaylist["next"] <= len(newplaylist["playlist"]):
+            if newplaylist["next"] < len(newplaylist["playlist"]):
                 if os.name == "posix":
                     proc = subprocess.Popen(f'ffplay -nodisp -autoexit -af "volume=0.4" "{newplaylist["playlist"][newplaylist["next"]]}"',stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT, 
                         shell=True, preexec_fn=os.setsid)
