@@ -33,7 +33,7 @@ else:
 
 # Enable discordRPC loop
 if discordRPC_enabled:
-    def init_discordRPC(state):
+    def init_discordRPC(state,details):
         discordRPC = Presence('1246101303084585071') #Change if you want custom RPC ;)
         def connect():
             try:
@@ -45,7 +45,7 @@ if discordRPC_enabled:
         while True:
             if connected:
                 try:
-                    discordRPC.update(state=str(state.value), details="Playing",small_image='texturedplayer',small_text="TexturedPlayer")
+                    discordRPC.update(state=str(state.value), details=str(details.value),small_image='texturedplayer',small_text="TexturedPlayer",buttons=[{"label":"Check it out on Github! :)","url":"https://github.com/TexturedPolak/texturedplayer"}])
                 except:
                     connected = connect()
             else:
@@ -53,11 +53,23 @@ if discordRPC_enabled:
             time.sleep(15)
         
     manager = multiprocessing.Manager()
-    current_song = manager.Value('Idle', 0)
-    discordRPC_loop=multiprocessing.Process(target=init_discordRPC, args=(current_song,))
+    current_song = manager.Value('Idle', "Idle")
+    current_state = manager.Value("Idle2", "Playing")
+    discordRPC_loop=multiprocessing.Process(target=init_discordRPC, args=(current_song, current_state))
     discordRPC_loop.start()
-    current_song.value = "Idle"
+   
+    
 
+# Is paused?
+paused = False
+
+def kill_ffplay():
+    global proc
+    if os.name == "posix":
+        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+    else:
+        subprocess.call(['taskkill', '/F', '/T', '/PID', str(proc.pid)],stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT, 
+                       shell=True)
 
 # Main Class
 class TexturMusic(App):
@@ -75,7 +87,7 @@ class TexturMusic(App):
         width: auto;
         text-align: center;
         align: center middle;
-        min-width: 50;
+        min-width: 75;
     }
     .buttons {
         min-width: 25;
@@ -91,7 +103,7 @@ class TexturMusic(App):
         yield Static("Loading...", classes="box", id="song")
         with Horizontal():
             yield Button("Previous", classes="buttons", id="previous")
-            yield Button("Next", classes="buttons", id="pause")
+            yield Button("Pause", classes="buttons", id="pause")
             yield Button("Next", classes="buttons", id="next")
         
     def change_text(self, change):
@@ -111,11 +123,7 @@ class TexturMusic(App):
         # Kill if music process is alive
         poll = proc.poll()
         if poll is None:
-            if os.name == "posix":
-                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-            else:
-                subprocess.call(['taskkill', '/F', '/T', '/PID', str(proc.pid)],stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT, 
-                       shell=True)
+            kill_ffplay()
         # Play next song if exist
         if newplaylist["next"] < len(newplaylist["playlist"]):
             if os.name == "posix":
@@ -148,14 +156,36 @@ class TexturMusic(App):
         if newplaylist["next"] < 0:
             newplaylist["next"] = 0
         self.play_next_song()
+    
+    # Pause button
+    @on(Button.Pressed, "#pause")
+    def pause_song(self):
+        global newplaylist
+        global paused
+        global proc
+        if discordRPC_enabled:
+            global current_song
+            global current_state
+        if paused is False:
+            kill_ffplay()
+            self.change_text("Paused")
+            if discordRPC_enabled:
+                current_state.value = "Paused"
+                current_song.value = ":("
+            paused = True
+            newplaylist["next"]-=1
+        else:
+            current_state.value = "Playing"
+            paused=False
         
             
     # Main Loop 
     # Needs to be fast!!
     def main_loop(self):
         global proc
+        global paused
         poll = proc.poll()
-        if poll is not None:
+        if poll is not None and paused is False:
             self.play_next_song()
     
     def on_mount(self) -> None:
@@ -167,8 +197,4 @@ if __name__ == "__main__":
     app.run()
     if discordRPC_enabled:
         discordRPC_loop.terminate()
-    if os.name == "posix":
-        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-    else:
-        subprocess.call(['taskkill', '/F', '/T', '/PID', str(proc.pid)],stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT, 
-                       shell=True)
+    kill_ffplay()
