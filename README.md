@@ -1,4 +1,6 @@
 # TexturedPlayer - ffplay and python based TUI music player
+<img src="https://i.imgur.com/xseHVj1.png" style="width:50px;"/>
+
 ![](https://img.shields.io/github/license/TexturedPolak/texturedplayer?style=for-the-badge
 )
 ![](https://img.shields.io/github/last-commit/TexturedPolak/texturedplayer?style=for-the-badge
