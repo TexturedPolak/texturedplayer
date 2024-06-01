@@ -183,7 +183,8 @@ class TexturMusic(App):
             paused = True
             newplaylist["next"]-=1
         else:
-            current_state.value = "Playing"
+            if discordRPC_enabled:
+                current_state.value = "Playing"
             paused=False
         
             
