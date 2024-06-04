@@ -17,7 +17,17 @@ except ModuleNotFoundError:
 import random
 # Get music directory from config.json
 try:
-    music_directory = json.loads(open("config.json","r").read()).get("music-directory")
+    if os.name == "posix":
+        if os.path.exists(os.path.expanduser('~')+"/.texturedplayer/config.json"):
+            music_directory = json.loads(open(os.path.expanduser('~')+"/.texturedplayer/config.json","r").read()).get("music-directory")
+        else:
+            if not os.path.exists(os.path.expanduser('~')+"/.texturedplayer"):
+                os.mkdir(os.path.expanduser('~')+"/.texturedplayer/")
+            open(os.path.expanduser('~')+"/.texturedplayer/config.json","w").write('{\n\t"music-directory":""\n}')
+            print("Set your music directory in ~/.texturedplayer/config.json")
+            exit()
+    else:
+        music_directory = json.loads(open("config.json","r").read()).get("music-directory")
 except FileNotFoundError:
     print("No config.json file found! Download sample_config.json and rename it to config.json!")
     exit()
@@ -25,7 +35,10 @@ if music_directory is not None:
     try:
         os.chdir(music_directory)
     except FileNotFoundError:
-        print("Wrong music directory!")
+        if os.name == "posix":
+            print("Change music directory in ~/.texturedplayer/config.json")
+        else:
+            print("Change music directory in config.json")
         exit()
 else:
     print("Broken config.json file.")
