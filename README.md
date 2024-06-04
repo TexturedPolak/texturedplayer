@@ -21,11 +21,12 @@
 ## Functions
 - Create randomized playlist from files in chosen (in config.json) directory.
 - Play any formats supported by ffplay.
+## Instalation
+Install it from [releases](https://github.com/TexturedPolak/texturedplayer) or clone this repository and install requirements.
 ## Usage
-0. Clone this repository and install requirements.
-1. Rename **sample_config.json** to **config.json**
-2. Edit `music-directory` in **config.json**.
-3. Run **main.py**
+1. Rename **sample_config.json** to **config.json** (Windows only)
+2. Edit `music-directory` in **config.json** (Windows) or **~/.texturedplayer/config.json** (Linux and MacOS).
+3. Run **main.py** (Repo cloned) or **texturedplayer** (Installed only)
 4. Enjoy :)
 
 > [!WARNING]  
