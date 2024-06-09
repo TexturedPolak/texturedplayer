@@ -4,7 +4,7 @@
 import texturedplayer_utils
 # TUI
 try:
-    from textual.app import App, ComposeResult
+    from textual.app import App
     from textual.widgets import Button, Static
     from textual.containers import Horizontal
     from textual import on
@@ -99,7 +99,7 @@ class TexturMusic(App):
     """
 
     # TUI
-    def compose(self) -> ComposeResult:
+    def compose(self):
         """Create child widgets for the app."""
         yield Static("Loading...", classes="box", id="song")
         with Horizontal():
