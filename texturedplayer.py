@@ -25,6 +25,7 @@ try:
     discordRPC_enabled = True
 except ModuleNotFoundError:
     discordRPC_enabled = False
+import asyncio
 
 # Init playlist and second process for playing music :)
 newplaylist = texturedplayer_utils.get_newplaylist()
@@ -72,15 +73,13 @@ class TexturMusic(App):
     Screen {
         layout: vertical;
         align: center middle;
-        
     }
-
     .box {
         height: auto;
-        border: solid green;
+        border: heavy green;
         width: auto;
         text-align: center;
-        align: center middle;
+        align: center top;
         min-width: 75;
     }
     .buttons {
@@ -88,6 +87,14 @@ class TexturMusic(App):
     }
     Horizontal{
         width: auto;
+        height: auto;
+        padding: 1 0;
+    }
+    .big-button{
+        height: auto;
+        min-width: 37.5;
+        text-align: center;
+        align: center middle;
     }
     """
 
@@ -99,7 +106,10 @@ class TexturMusic(App):
             yield Button("Previous", classes="buttons", id="previous")
             yield Button("Pause", classes="buttons", id="pause")
             yield Button("Next", classes="buttons", id="next")
-        
+        with Horizontal():
+            yield Button("Reset playlist", classes='big-button', id="reset")
+            yield Button("Quit", classes='big-button', id="quit")
+            
     def change_text(self, change):
         song = self.query_one("#song")
         song.label = change
@@ -188,7 +198,19 @@ class TexturMusic(App):
             if discordRPC_enabled:
                 current_state.value = "Playing"
             paused=False
-        
+
+    @on(Button.Pressed, '#quit')
+    def quit(self):
+        if discordRPC_enabled:
+            discordRPC_loop.terminate()
+        kill_ffplay()
+        exit()
+    
+    @on(Button.Pressed, '#reset')
+    def reset_playlist(self):
+        global newplaylist
+        newplaylist = texturedplayer_utils.get_random_playlist(texturedplayer_utils.create_playlist())
+        self.play_next_song()
             
     # Main Loop 
     # Needs to be fast!!
