@@ -8,7 +8,7 @@
 ![](https://img.shields.io/github/stars/TexturedPolak/texturedplayer?style=for-the-badge
 )
 ![](https://img.shields.io/github/languages/top/TexturedPolak/texturedplayer?style=for-the-badge)
-![](https://i.imgur.com/jZflVR8.png)
+![](https://i.imgur.com/JTW3TRl.png)
 ## Requirements:
 - **ffplay** installed (it comes with **ffmpeg**). Search on google, how to install **ffmpeg** that on your OS.
 - **[Textual](https://github.com/textualize/textual/)** library. You can install it using `pip install textual`.
