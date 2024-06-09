@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # Creating Playlists
-import utils
+import texturedplayer_utils
 # TUI
 try:
     from textual.app import App, ComposeResult
@@ -27,7 +27,7 @@ except ModuleNotFoundError:
     discordRPC_enabled = False
 
 # Init playlist and second process for playing music :)
-newplaylist = utils.get_newplaylist()
+newplaylist = texturedplayer_utils.get_newplaylist()
 if os.name == "posix":
     proc = subprocess.Popen('echo "TexturedPlayer for Linux/MacOS"', shell=True, preexec_fn=os.setsid)
 else:
@@ -126,15 +126,15 @@ class TexturMusic(App):
             else:
                 proc = subprocess.Popen(f'ffplay -nodisp -autoexit -af "volume=0.4" "{newplaylist["playlist"][newplaylist["next"]]}"',stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT, 
                     shell=True)
-            self.change_text(str(utils.get_metadata(newplaylist["playlist"][newplaylist["next"]])))
+            self.change_text(str(texturedplayer_utils.get_metadata(newplaylist["playlist"][newplaylist["next"]])))
             # Change song in discord RPC (may display after 15 seconds)
             if discordRPC_enabled:
-                current_song.value = str(utils.get_metadata(newplaylist["playlist"][newplaylist["next"]]))
+                current_song.value = str(texturedplayer_utils.get_metadata(newplaylist["playlist"][newplaylist["next"]]))
             newplaylist["next"] += 1
-            utils.save_playlist(newplaylist)
+            texturedplayer_utils.save_playlist(newplaylist)
         # Create new playlist, if next song don't exist
         else:
-            newplaylist = utils.get_random_playlist(utils.create_playlist())
+            newplaylist = texturedplayer_utils.get_random_playlist(texturedplayer_utils.create_playlist())
             self.play_next_song()
 
     # Next button
