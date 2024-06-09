@@ -81,7 +81,10 @@ def create_playlist():
 # Get song metadata. If not have metadata, just return filename.
 def get_metadata(song_file: str):
     if tinytag_enabled is True:
-        song_data = TinyTag.get(song_file)
+        try:
+            song_data = TinyTag.get(song_file)
+        except:
+            return(song_file)
         if song_data.artist is None:
             return(song_file)
         else:
