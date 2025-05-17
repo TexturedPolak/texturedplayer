@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# Playing music with vlc
+import vlc
+
 # Creating Playlists
 import texturedplayer_utils
 # TUI
@@ -12,6 +15,12 @@ except ModuleNotFoundError:
     print("Textual is now still needed to run this app.")
     print("Install it with 'pip install textual'.")
     exit()
+try:
+    import vlc
+except:
+    print("python-vlc is now still needed to run this app.")
+    print("Install it with 'pip install python-vlc'.")
+    print("Make sure you have vlc installed as well.")
 # Run in background
 import subprocess
 # Many things with os
@@ -58,13 +67,9 @@ if discordRPC_enabled:
 # Is paused?
 paused = False
 
-def kill_ffplay():
-    global proc
-    if os.name == "posix":
-        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-    else:
-        subprocess.call(['taskkill', '/F', '/T', '/PID', str(proc.pid)],stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT, 
-                       shell=True)
+def stop_vlc():
+    global vlc_player
+    vlc_player.stop()
 
 # Main Class
 class TexturMusic(App):
@@ -121,21 +126,23 @@ class TexturMusic(App):
     def play_next_song(self):
         global proc
         global newplaylist
+        global song_title
         # Global discordRPC current song
         if discordRPC_enabled:
             global current_song
         # Kill if music process is alive
         poll = proc.poll()
         if poll is None:
-            kill_ffplay()
+            stop_vlc()
         # Play next song if exist
         if newplaylist["next"] < len(newplaylist["playlist"]):
             if os.name == "posix":
-                proc = subprocess.Popen(f'ffplay -nodisp -autoexit -af "volume=0.4" "{newplaylist["playlist"][newplaylist["next"]]}"',stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT, 
-                    shell=True, preexec_fn=os.setsid)
-            else:
-                proc = subprocess.Popen(f'ffplay -nodisp -autoexit -af "volume=0.4" "{newplaylist["playlist"][newplaylist["next"]]}"',stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT, 
-                    shell=True)
+                pass
+                song_title = str(texturedplayer_utils.get_metadata(newplaylist["playlist"][newplaylist["next"]]))
+                media = vlc_instance.media_new(newplaylist["playlist"][newplaylist["next"]])
+                vlc_player.set_media(media)
+                vlc_player.play()
+            
             self.change_text(str(texturedplayer_utils.get_metadata(newplaylist["playlist"][newplaylist["next"]])))
             # Change song in discord RPC (may display after 15 seconds)
             if discordRPC_enabled:
@@ -187,7 +194,7 @@ class TexturMusic(App):
             global current_song
             global current_state
         if paused is False:
-            kill_ffplay()
+            vlc_player.pause()
             self.change_text("Paused")
             if discordRPC_enabled:
                 current_state.value = "Paused"
@@ -197,13 +204,15 @@ class TexturMusic(App):
         else:
             if discordRPC_enabled:
                 current_state.value = "Playing"
+            vlc_player.play()
+            self.change_text(song_title)
             paused=False
 
     @on(Button.Pressed, '#quit')
     def quit(self):
         if discordRPC_enabled:
             discordRPC_loop.terminate()
-        kill_ffplay()
+        stop_vlc()
         exit()
     
     @on(Button.Pressed, '#reset')
@@ -218,7 +227,7 @@ class TexturMusic(App):
         global proc
         global paused
         poll = proc.poll()
-        if poll is not None and paused is False:
+        if poll is not None and paused is False and vlc_player.get_state() == vlc.State.NothingSpecial or vlc_player.get_state() == vlc.State.Ended:
             self.play_next_song()
     
     def on_mount(self) -> None:
@@ -233,8 +242,18 @@ if __name__ == "__main__":
         current_state = manager.Value("Idle2", "Playing")
         discordRPC_loop=multiprocessing.Process(target=init_discordRPC, args=(current_song, current_state))
         discordRPC_loop.start()
+    song_title=""
+    # Setup vlc
+    vlc_instance = vlc.Instance()
+    vlc_player = vlc_instance.media_player_new()
+    def on_playing(event):
+        subprocess.run(["notify-send", "TexturedPlayer", song_title])
+
+    # Attach the event listener
+    event_manager = vlc_player.event_manager()
+    event_manager.event_attach(vlc.EventType.MediaPlayerPlaying, on_playing)
     app = TexturMusic()
     app.run()
     if discordRPC_enabled:
         discordRPC_loop.terminate()
-    kill_ffplay()
+    stop_vlc()
