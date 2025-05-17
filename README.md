@@ -10,7 +10,7 @@
 ![](https://img.shields.io/github/languages/top/TexturedPolak/texturedplayer?style=for-the-badge)
 ![](https://i.imgur.com/JTW3TRl.png)
 ## Requirements:
-- **[vlc]**(https://www.videolan.org/vlc/) installed.
+- **[vlc](https://www.videolan.org/vlc/) installed.**
 - **[python-vlc](https://github.com/oaubert/python-vlc)** library. You can install it using `pip install python-vlc`.
 - **[Textual](https://github.com/textualize/textual/)** library. You can install it using `pip install textual`.
 ## Optional
