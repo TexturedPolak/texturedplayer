@@ -3,6 +3,8 @@ import json
 import os
 # For one message ;)
 from subprocess import Popen
+import base64
+import requests
 # For metadata
 try:
     from tinytag import TinyTag
@@ -91,6 +93,105 @@ def get_metadata(song_file: str):
             return str(song_data.title) + " - " + str(song_data.artist)
     else:
         return(song_file)
+
+
+from PIL import Image
+import io
+
+def resize_to_1024(image_bytes):
+    # Normalize input to PIL Image
+    if isinstance(image_bytes, Image.Image):
+        img = image_bytes
+    elif isinstance(image_bytes, io.BytesIO):
+        img = Image.open(image_bytes)
+    elif isinstance(image_bytes, (bytes, bytearray)):
+        img = Image.open(io.BytesIO(image_bytes))
+    else:
+        raise TypeError(f"Unsupported type: {type(image_bytes)}")
+
+    # Obliczamy skalę tak, aby obraz miał max 1024 px w obu wymiarach
+    scale = 1024 / max(img.width, img.height)
+    new_w = int(img.width * scale)
+    new_h = int(img.height * scale)
+
+    # Skalowanie w górę lub w dół
+    img = img.resize((new_w, new_h), Image.LANCZOS)
+
+    # Tworzymy kwadrat 1024x1024
+    new_img = Image.new("RGB", (1024, 1024), (0, 0, 0))
+
+    # Centrowanie
+    x = (1024 - new_w) // 2
+    y = (1024 - new_h) // 2
+    new_img.paste(img, (x, y))
+
+    # Zapis do bajtów
+    output = io.BytesIO()
+    new_img.save(output, format="JPEG", quality=95)
+    return output.getvalue()
+
+def upload_catbox(image_bytes, filename="image.jpg"):
+    url = "https://catbox.moe/user/api.php"
+    data = {
+        "reqtype": "fileupload",
+    }
+    files = {
+        "fileToUpload": (filename, image_bytes)
+    }
+
+    r = requests.post(url, data=data, files=files)
+    r.raise_for_status()
+    return r.text.strip()
+    
+def get_cover_url(song_file: str) -> str:
+    if tinytag_enabled is True:
+        try:
+            song_data = TinyTag.get(song_file, image=True)
+        except:
+            return "texturedplayer-new"
+        print(get_cover(song_file=song_file))
+        try:
+            url = upload_catbox(resize_to_1024(get_cover(song_file=song_file)))
+        except:
+            url = "texturedplayer-new"
+        print(url)
+        return url
+    
+def get_cover(song_file:str):
+    if tinytag_enabled is True:
+        try:
+            song_data = TinyTag.get(song_file, image=True)
+        except:
+
+            return Image.new("RGB", (1024, 1024), "#121212")
+        try:
+            if song_data.images.front_cover is not None:
+                return io.BytesIO(song_data.images.front_cover.data)
+            elif song_data.images.media is not None:
+                return io.BytesIO(song_data.images.media.data)
+            elif song_data.images.other is not None:
+                return io.BytesIO(song_data.images.other.get("generic")[0].data)
+            else:
+                return Image.new("RGB", (1024, 1024), "#121212")
+        except:
+            print(":(")
+            print(song_data.images.other)
+            return Image.new("RGB", (1024, 1024), "#121212")
+            
+
+
+def get_album_name(song_file: str):
+    if tinytag_enabled is True:
+        try:
+            song_data = TinyTag.get(song_file)
+        except:
+            return None
+        if song_data.album is None:
+            return None
+        else:
+            return str(song_data.album)
+    else:
+        return None
 
 # Get old playlist from playlist.json.
 def get_newplaylist():

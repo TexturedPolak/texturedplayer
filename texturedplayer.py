@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 
+import datetime
+
 # Playing music with vlc
 import vlc
 
 # Creating Playlists
 import texturedplayer_utils
+
+from textual_image.widget import Image
 # TUI
 try:
     from textual.app import App
@@ -25,17 +29,16 @@ except:
 import subprocess
 # Many things with os
 import os
-import signal
 # For discord RPC
 try:
     from pypresence import Presence
+    from pypresence.types import ActivityType
     import time
     import multiprocessing
     discordRPC_enabled = True
 except ModuleNotFoundError:
     discordRPC_enabled = False
-import asyncio
-
+from PIL import Image as PillowImage
 # Init playlist and second process for playing music :)
 newplaylist = texturedplayer_utils.get_newplaylist()
 if os.name == "posix":
@@ -45,7 +48,7 @@ else:
 
 # Define discordRPC loop
 if discordRPC_enabled:
-    def init_discordRPC(state,details):
+    def init_discordRPC(state,details,cover,album, start, stop):
         discordRPC = Presence('1246101303084585071') #Change if you want custom RPC ;)
         def connect():
             try:
@@ -56,13 +59,28 @@ if discordRPC_enabled:
         connected = connect()
         while True:
             if connected:
+                artist = None
+                title = None
+                if len(state.value.split("-")) >= 2:
+                    title = state.value.split("-")[0]
+                    artist = state.value.split("-")[1]
+                else:
+                    artist = state.value
+                if album.value is None:
+                    album_temp = album.value
+                else:
+                    album_temp = "Z albumu "+str(album.value)
+
                 try:
-                    discordRPC.update(state=str(state.value), details=str(details.value),small_image='texturedplayer',small_text="TexturedPlayer",buttons=[{"label":"Check it out on Github! :)","url":"https://github.com/TexturedPolak/texturedplayer"}])
+                    if start.value != 0:
+                        discordRPC.update(activity_type=ActivityType.LISTENING, state=artist, name=str(state.value), details=title, large_image=str(cover.value), small_image="texturedplayer-new", small_text="TexturedPlayer", large_text=album_temp, start=int(start.value), end=int(stop.value))
+                    else:
+                        discordRPC.update(activity_type=ActivityType.LISTENING, state=artist, name=str(state.value), details=title, large_image=str(cover.value), small_image="texturedplayer-new", small_text="TexturedPlayer", large_text=album_temp)
                 except:
                     connected = connect()
             else:
                 connected = connect()
-            time.sleep(15)
+            time.sleep(5)
 
 # Is paused?
 paused = False
@@ -101,11 +119,21 @@ class TexturMusic(App):
         text-align: center;
         align: center middle;
     }
+    Image{
+        width: 75;
+        height: auto;
+        text-align: center;
+        align: center middle;
+    }
     """
 
     # TUI
     def compose(self):
         """Create child widgets for the app."""
+        
+        self.cover_img = Image()
+        self.cover_img.image =  PillowImage.new("RGB", (1024, 1024), "red")
+        yield self.cover_img
         yield Static("Loading...", classes="box", id="song")
         with Horizontal():
             yield Button("Previous", classes="buttons", id="previous")
@@ -114,6 +142,7 @@ class TexturMusic(App):
         with Horizontal():
             yield Button("Reset playlist", classes='big-button', id="reset")
             yield Button("Quit", classes='big-button', id="quit")
+
             
     def change_text(self, change):
         song = self.query_one("#song")
@@ -130,6 +159,10 @@ class TexturMusic(App):
         # Global discordRPC current song
         if discordRPC_enabled:
             global current_song
+            global current_cover
+            global current_album
+            global current_stop
+            global current_start
         # Kill if music process is alive
         poll = proc.poll()
         if poll is None:
@@ -144,9 +177,17 @@ class TexturMusic(App):
                 vlc_player.play()
             
             self.change_text(str(texturedplayer_utils.get_metadata(newplaylist["playlist"][newplaylist["next"]])))
+            self.cover_img.image = texturedplayer_utils.get_cover(newplaylist["playlist"][newplaylist["next"]])
             # Change song in discord RPC (may display after 15 seconds)
             if discordRPC_enabled:
                 current_song.value = str(texturedplayer_utils.get_metadata(newplaylist["playlist"][newplaylist["next"]]))
+                current_cover.value = texturedplayer_utils.get_cover_url(newplaylist["playlist"][newplaylist["next"]])
+                current_album.value = texturedplayer_utils.get_album_name(newplaylist["playlist"][newplaylist["next"]])
+                temp_start = datetime.datetime.now()
+                current_start.value = temp_start.timestamp()
+                temp_stop = temp_start + datetime.timedelta(milliseconds=vlc_player.get_length())
+                current_stop.value = temp_stop.timestamp()
+                
             newplaylist["next"] += 1
             texturedplayer_utils.save_playlist(newplaylist)
         # Create new playlist, if next song don't exist
@@ -193,17 +234,24 @@ class TexturMusic(App):
         if discordRPC_enabled:
             global current_song
             global current_state
+            global current_start
+            global current_stop
         if paused is False:
             vlc_player.pause()
             self.change_text("Paused")
             if discordRPC_enabled:
                 current_state.value = "Paused"
-                current_song.value = ":("
+                current_start.value = 0
+                current_stop.value = 0
             paused = True
             newplaylist["next"]-=1
         else:
             if discordRPC_enabled:
                 current_state.value = "Playing"
+                temp_start = datetime.datetime.now() - datetime.timedelta(milliseconds=int(vlc_player.get_position()*vlc_player.get_length()))
+                current_start.value = temp_start.timestamp()
+                temp_stop = temp_start + datetime.timedelta(milliseconds=vlc_player.get_length())
+                current_stop.value = temp_stop.timestamp()
             vlc_player.play()
             self.change_text(song_title)
             paused=False
@@ -227,7 +275,9 @@ class TexturMusic(App):
         global proc
         global paused
         poll = proc.poll()
-        if poll is not None and paused is False and vlc_player.get_state() == vlc.State.NothingSpecial or vlc_player.get_state() == vlc.State.Ended:
+        #print(vlc_player.get_state())
+        #print(vlc_player.get_length())
+        if poll is not None and paused is False and vlc_player.get_state() == vlc.State.NothingSpecial or vlc_player.get_state() == vlc.State.Ended or vlc_player.get_state() == vlc.State.Error or vlc_player.get_length() == 0:
             self.play_next_song()
     
     def on_mount(self) -> None:
@@ -240,7 +290,11 @@ if __name__ == "__main__":
         manager = multiprocessing.Manager()
         current_song = manager.Value('Idle', "Loading...")
         current_state = manager.Value("Idle2", "Playing")
-        discordRPC_loop=multiprocessing.Process(target=init_discordRPC, args=(current_song, current_state))
+        current_cover = manager.Value("cover", "texturedpolak")
+        current_album = manager.Value("album", None)
+        current_start = manager.Value("start", datetime.datetime.now().timestamp())
+        current_stop = manager.Value("stop", datetime.datetime.now().timestamp())
+        discordRPC_loop=multiprocessing.Process(target=init_discordRPC, args=(current_song, current_state, current_cover, current_album, current_start, current_stop))
         discordRPC_loop.start()
     song_title=""
     # Setup vlc
