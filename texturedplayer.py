@@ -13,7 +13,7 @@ from textual_image.widget import Image
 # TUI
 try:
     from textual.app import App
-    from textual.widgets import Button, Static
+    from textual.widgets import Button, Static, ProgressBar
     from textual.containers import Horizontal
     from textual import on
 except ModuleNotFoundError:
@@ -126,6 +126,12 @@ class TexturMusic(App):
         text-align: center;
         align: center middle;
     }
+    ProgressBar{
+        width: 75;
+        height: auto;
+        text-align: center;
+        align: center middle;
+    }
     """
 
     # TUI
@@ -136,6 +142,7 @@ class TexturMusic(App):
         self.cover_img.image =  PillowImage.new("RGB", (1024, 1024), "red")
         yield self.cover_img
         yield Static("Loading...", classes="box", id="song")
+        yield ProgressBar()
         with Horizontal():
             yield Button("Previous", classes="buttons", id="previous")
             yield Button("Pause", classes="buttons", id="pause")
@@ -179,13 +186,14 @@ class TexturMusic(App):
                 await asyncio.sleep(0)
                 await asyncio.to_thread(vlc_player.set_media, media)
                 await asyncio.sleep(0)
-                await asyncio.to_thread(vlc_player.play)
-                await asyncio.sleep(0)
+                vlc_player.play()
+                
             song_title = await asyncio.to_thread(texturedplayer_utils.get_metadata, path)
             self.change_text(song_title)
             await asyncio.sleep(0)
             self.cover_img.image = await asyncio.to_thread(texturedplayer_utils.get_cover, path)
             await asyncio.sleep(0)
+            
             # Change song in discord RPC (may display after 15 seconds)
             if discordRPC_enabled:
                 current_song.value = song_title
@@ -309,12 +317,15 @@ class TexturMusic(App):
         poll = proc.poll()
         #print(vlc_player.get_state())
         #print(vlc_player.get_length())
+        if vlc_player.get_state() == vlc.State.Playing:
+            self.query_one(ProgressBar).update(progress=vlc_player.get_position(), total=1)
         if poll is not None and paused is False and vlc_player.get_state() == vlc.State.NothingSpecial or vlc_player.get_state() == vlc.State.Ended or vlc_player.get_state() == vlc.State.Error or vlc_player.get_length() == 0:
             await self.play_next_song()
         await asyncio.sleep(0.2)
     
     def on_mount(self) -> None:
         self.next_worker = None
+        self.query_one(ProgressBar).update(progress=0, total=1)
         self.update_timer = self.set_interval(1, self.main_loop, pause=False)
     
 # Running and exiting ;)
