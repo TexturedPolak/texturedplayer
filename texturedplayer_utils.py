@@ -3,8 +3,10 @@ import json
 import os
 # For one message ;)
 from subprocess import Popen
-import base64
+# Covers uploading etc.
 import requests
+from PIL import Image
+import io
 # For metadata
 try:
     from tinytag import TinyTag
@@ -93,10 +95,6 @@ def get_metadata(song_file: str):
             return str(song_data.title) + " - " + str(song_data.artist)
     else:
         return(song_file)
-
-
-from PIL import Image
-import io
 
 def resize_to_1024(image_bytes):
     # Normalize input to PIL Image

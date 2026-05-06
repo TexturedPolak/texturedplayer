@@ -1,4 +1,5 @@
 # TexturedPlayer (Linux edition) - vlc and python based TUI music player
+
 <img src="https://i.imgur.com/xseHVj1.png" style="width:50px;"/>
 
 ![](https://img.shields.io/github/license/TexturedPolak/texturedplayer?style=for-the-badge
@@ -9,22 +10,35 @@
 )
 ![](https://img.shields.io/github/languages/top/TexturedPolak/texturedplayer?style=for-the-badge)
 ![](https://i.imgur.com/JTW3TRl.png)
-## Requirements:
+
+## Requirements
+
 - **[vlc](https://www.videolan.org/vlc/) installed.**
 - **[python-vlc](https://github.com/oaubert/python-vlc)** library. You can install it using `pip install python-vlc`.
 - **[Textual](https://github.com/textualize/textual/)** library. You can install it using `pip install textual`.
+- **[Pillow](https://github.com/python-pillow/Pillow)** library. You can install it using `pip install pillow`.
+- **[Requests](https://github.com/psf/requests)** library. You can install it using `pip install requests`.
+
 ## Optional
+
 - **[Tinytag](https://github.com/devsnd/tinytag)** library for metadata (like title, author etc.) support. You can install it using `pip install tinytag`.
 - **[Pypresence](https://github.com/qwertyquerty/pypresence)** library for discord rich presence (in-game status). You can install it using `pip install pypresence`.<br>
 [![pypresence](https://img.shields.io/badge/using-pypresence-00bb88.svg?style=for-the-badge&logo=discord&logoWidth=20)](https://github.com/qwertyquerty/pypresence)
+
 > [!NOTE]  
 > Songs in discord rich presence may change with a delay (about 15 seconds).
+>
 ## Functions
+
 - Create randomized playlist from files in chosen (in config.json) directory.
 - Play any formats supported by vlc.
+
 ## Instalation
+
 Install it from [releases](https://github.com/TexturedPolak/texturedplayer) or clone this repository and install requirements.
+
 ## Usage
+
 1. Edit `music-directory` in **~/.texturedplayer/config.json** (Linux and MacOS).
 2. Run **main.py** (Repo cloned) or **texturedplayer** (Installed only)
 3. Enjoy :)
