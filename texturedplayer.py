@@ -189,14 +189,15 @@ class TexturMusic(App):
             # Change song in discord RPC (may display after 15 seconds)
             if discordRPC_enabled:
                 current_song.value = song_title
-                current_cover.value = await asyncio.to_thread(texturedplayer_utils.get_cover_url, path)
-                await asyncio.sleep(0)
                 current_album.value = await asyncio.to_thread(texturedplayer_utils.get_album_name, path)
                 await asyncio.sleep(0)
                 temp_start = datetime.datetime.now()
                 current_start.value = temp_start.timestamp()
                 temp_stop = temp_start + datetime.timedelta(milliseconds=vlc_player.get_length())
                 current_stop.value = temp_stop.timestamp()
+                current_cover.value = await asyncio.to_thread(texturedplayer_utils.get_cover_url, path)
+                await asyncio.sleep(0)
+                
                 
             
             await asyncio.to_thread(texturedplayer_utils.save_playlist, newplaylist)
