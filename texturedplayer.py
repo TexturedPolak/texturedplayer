@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 import datetime
-
+import asyncio
+from textual.worker import get_current_worker
 # Playing music with vlc
 import vlc
 
@@ -152,7 +153,8 @@ class TexturMusic(App):
 
 
     # Main player
-    def play_next_song(self):
+    async def play_next_song(self):
+        #worker = get_current_worker()
         global proc
         global newplaylist
         global song_title
@@ -166,64 +168,93 @@ class TexturMusic(App):
         # Kill if music process is alive
         poll = proc.poll()
         if poll is None:
-            stop_vlc()
+            await asyncio.to_thread(stop_vlc)
+            await asyncio.sleep(0)
         # Play next song if exist
         if newplaylist["next"] < len(newplaylist["playlist"]):
+            path = newplaylist["playlist"][newplaylist["next"]]
+            newplaylist["next"] += 1
             if os.name == "posix":
-                pass
-                song_title = str(texturedplayer_utils.get_metadata(newplaylist["playlist"][newplaylist["next"]]))
-                media = vlc_instance.media_new(newplaylist["playlist"][newplaylist["next"]])
-                vlc_player.set_media(media)
-                vlc_player.play()
-            
-            self.change_text(str(texturedplayer_utils.get_metadata(newplaylist["playlist"][newplaylist["next"]])))
-            self.cover_img.image = texturedplayer_utils.get_cover(newplaylist["playlist"][newplaylist["next"]])
+                media = await asyncio.to_thread(vlc_instance.media_new, path)
+                await asyncio.sleep(0)
+                await asyncio.to_thread(vlc_player.set_media, media)
+                await asyncio.sleep(0)
+                await asyncio.to_thread(vlc_player.play)
+                await asyncio.sleep(0)
+            song_title = await asyncio.to_thread(texturedplayer_utils.get_metadata, path)
+            self.change_text(song_title)
+            await asyncio.sleep(0)
+            self.cover_img.image = await asyncio.to_thread(texturedplayer_utils.get_cover, path)
+            await asyncio.sleep(0)
             # Change song in discord RPC (may display after 15 seconds)
             if discordRPC_enabled:
-                current_song.value = str(texturedplayer_utils.get_metadata(newplaylist["playlist"][newplaylist["next"]]))
-                current_cover.value = texturedplayer_utils.get_cover_url(newplaylist["playlist"][newplaylist["next"]])
-                current_album.value = texturedplayer_utils.get_album_name(newplaylist["playlist"][newplaylist["next"]])
+                current_song.value = song_title
+                current_cover.value = await asyncio.to_thread(texturedplayer_utils.get_cover_url, path)
+                await asyncio.sleep(0)
+                current_album.value = await asyncio.to_thread(texturedplayer_utils.get_album_name, path)
+                await asyncio.sleep(0)
                 temp_start = datetime.datetime.now()
                 current_start.value = temp_start.timestamp()
                 temp_stop = temp_start + datetime.timedelta(milliseconds=vlc_player.get_length())
                 current_stop.value = temp_stop.timestamp()
                 
-            newplaylist["next"] += 1
-            texturedplayer_utils.save_playlist(newplaylist)
+            
+            await asyncio.to_thread(texturedplayer_utils.save_playlist, newplaylist)
+            await asyncio.sleep(0)
         # Create new playlist, if next song don't exist
         else:
-            newplaylist = texturedplayer_utils.get_random_playlist(texturedplayer_utils.create_playlist())
-            self.play_next_song()
+            newplaylist = await asyncio.to_thread(texturedplayer_utils.get_random_playlist, texturedplayer_utils.create_playlist())
+            await asyncio.sleep(0)
+            await self.play_next_song()
 
     # Next button
     @on(Button.Pressed, "#next")
-    def next_song(self):
+    async def next_song(self):
         global paused
         global newplaylist
         if discordRPC_enabled:
             global current_state
             current_state.value = "Playing"
-        if paused:
-            newplaylist["next"] += 1
+        #if paused:
+            #newplaylist["next"] += 1
         paused = False
-        self.play_next_song()
+
+
+        if self.next_worker and not self.next_worker.is_finished:
+            self.next_worker.cancel()
+
+        # Start new worker
+        self.next_worker = self.run_worker(
+            self.play_next_song(),
+            name="next_song_worker",
+            exclusive=False  # allow replacement
+        )
+        #await self.play_next_song()
         
     # Previous button
     @on(Button.Pressed, "#previous")
-    def previous_song(self):
+    async def previous_song(self):
         global newplaylist
         global paused
         if discordRPC_enabled:
             global current_state
             current_state.value = "Playing"
-        if paused:
-            newplaylist["next"] -= 1
-        else:
-            newplaylist["next"] -= 2
+        newplaylist["next"] -= 2
         if newplaylist["next"] < 0:
             newplaylist["next"] = 0
         paused = False
-        self.play_next_song()
+
+        if self.next_worker and not self.next_worker.is_finished:
+            self.next_worker.cancel()
+
+        # Start new worker
+        self.next_worker = self.run_worker(
+            self.play_next_song(),
+            name="next_song_worker",
+            exclusive=False  # allow replacement
+        )
+        
+        #await self.play_next_song()
     
     # Pause button
     @on(Button.Pressed, "#pause")
@@ -244,7 +275,7 @@ class TexturMusic(App):
                 current_start.value = 0
                 current_stop.value = 0
             paused = True
-            newplaylist["next"]-=1
+            #newplaylist["next"]-=1
         else:
             if discordRPC_enabled:
                 current_state.value = "Playing"
@@ -271,16 +302,18 @@ class TexturMusic(App):
             
     # Main Loop 
     # Needs to be fast!!
-    def main_loop(self):
+    async def main_loop(self):
         global proc
         global paused
         poll = proc.poll()
         #print(vlc_player.get_state())
         #print(vlc_player.get_length())
         if poll is not None and paused is False and vlc_player.get_state() == vlc.State.NothingSpecial or vlc_player.get_state() == vlc.State.Ended or vlc_player.get_state() == vlc.State.Error or vlc_player.get_length() == 0:
-            self.play_next_song()
+            await self.play_next_song()
+        await asyncio.sleep(0.2)
     
     def on_mount(self) -> None:
+        self.next_worker = None
         self.update_timer = self.set_interval(1, self.main_loop, pause=False)
     
 # Running and exiting ;)

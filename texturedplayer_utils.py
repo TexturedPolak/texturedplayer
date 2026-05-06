@@ -75,7 +75,7 @@ def get_random_playlist(newplaylist):
 def create_playlist():
     playlist = []
     for file in os.listdir():
-        if file != "playlist.json":
+        if file != "playlist.json" and file[-4:] == "flac":
             playlist.append(file)
     newplaylist = {"playlist":playlist,"next":0}
     return newplaylist
