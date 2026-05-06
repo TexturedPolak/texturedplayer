@@ -98,6 +98,7 @@ class TexturMusic(App):
         layout: vertical;
         align: center middle;
     }
+    
     .box {
         height: auto;
         border: heavy green;
@@ -106,32 +107,43 @@ class TexturMusic(App):
         align: center top;
         min-width: 75;
     }
+
     .buttons {
         min-width: 25;
     }
+
     Horizontal{
         width: auto;
         height: auto;
         padding: 1 0;
     }
+
     .big-button{
         height: auto;
         min-width: 37.5;
         text-align: center;
         align: center middle;
     }
+
     Image{
         width: 75;
         height: auto;
         text-align: center;
         align: center middle;
     }
+
+    #eta{
+        text-align: right;
+        align: center top;
+        width: 5;
+    }
+
     ProgressBar{
-        width: 75;
-        height: auto;
+        width: 70;
         text-align: center;
         align: center middle;
     }
+    
     """
 
     # TUI
@@ -142,7 +154,9 @@ class TexturMusic(App):
         self.cover_img.image =  PillowImage.new("RGB", (1024, 1024), "red")
         yield self.cover_img
         yield Static("Loading...", classes="box", id="song")
-        yield ProgressBar()
+        with Horizontal():
+            yield ProgressBar(show_eta=False)
+            yield Static("00:00", id="eta")
         with Horizontal():
             yield Button("Previous", classes="buttons", id="previous")
             yield Button("Pause", classes="buttons", id="pause")
@@ -319,14 +333,17 @@ class TexturMusic(App):
         #print(vlc_player.get_length())
         if vlc_player.get_state() == vlc.State.Playing:
             self.query_one(ProgressBar).update(progress=vlc_player.get_position(), total=1)
+            time_left_temp = datetime.timedelta(milliseconds=int(vlc_player.get_length() - (vlc_player.get_length() * vlc_player.get_position())))
+            time_left = (datetime.datetime.min + time_left_temp).time()
+            eta = self.query_one("#eta")
+            eta.update(f"{time_left.minute:02d}:{time_left.second:02d}")
         if poll is not None and paused is False and vlc_player.get_state() == vlc.State.NothingSpecial or vlc_player.get_state() == vlc.State.Ended or vlc_player.get_state() == vlc.State.Error or vlc_player.get_length() == 0:
             await self.play_next_song()
-        await asyncio.sleep(0.2)
     
     def on_mount(self) -> None:
         self.next_worker = None
         self.query_one(ProgressBar).update(progress=0, total=1)
-        self.update_timer = self.set_interval(1, self.main_loop, pause=False)
+        self.update_timer = self.set_interval(0.5, self.main_loop, pause=False)
     
 # Running and exiting ;)
 if __name__ == "__main__":
